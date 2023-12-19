@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Modules to be launched -->
+  <arg name="map_projection_loader" default="true" description="map projection loader"/>
+  <arg name="Map" default="true" description="launch map"/>
+  <arg name="ground_segmentation" default="true" description="ground segmentation"/>
+  <arg name="euclidean_cluster" default="true" description="euclidean cluster"/>
+  <arg name="detected_object_validation" default="true" description="detected object validation"/>
+
+  <!-- Global parameters -->
+  <arg name="use_sim_time" default="true" description="use_sim_time"/>
+  <arg name="vehicle_model" default="sample_vehicle" description="vehicle model name"/>
+  <!-- map_projection_loader -->
+  <arg name="map_projector_info_path" default="/home/auto-zcy/project/autoware_map/carpark_P/map_projector_info.yaml" description="Path to the yaml file"/>
+  <arg name="lanelet2_map_path" default="/home/auto-zcy/project/autoware_map/carpark_P/lanelet2_map.osm" description="Path to the lanelet2 map file"/>
+  <!-- Map -->
+  <arg name="map_path" default="/home/auto-zcy/project/autoware_map/carpark_P" description="map path name"/>
+  <!-- ground_segmentation -->
+  <arg name="input/pointcloud" default="/rslidar_points_helios" description="input topic"/>
+  <arg name="output/pointcloud" default="/noground" description="output topic"/>
+  <!-- euclidean_cluster -->
+  <arg name="input_pointcloud" default="/noground"/>
+  <arg name="input_map" default="/map/pointcloud_map"/>
+  <!-- detected_object_validation -->
+  <arg name="input/cluster" default="/clusters" description="input cluster topic"/>
+
+  <!-- Tools -->
+  <arg name="rviz" default="true" description="launch rviz"/>
+  <arg name="rviz_config" default="/home/auto-zcy/project/autoware/rviz/cluster.rviz" description="rviz config"/>
+  <arg name="rviz_start_image" default="/home/auto-zcy/project/autoware/rviz/rviz_start.jpg" description="rviz start image"/>
+  <arg name="rviz_respawn" default="true"/>
+
+  <!-- Tools -->
+  <group>
+    <node
+      pkg="rviz2"
+      exec="rviz2"
+      name="rviz2"
+      output="screen"
+      args="-d $(var rviz_config) -s $(var rviz_start_image)"
+      if="$(var rviz)"
+      respawn="$(var rviz_respawn)"
+    />
+  </group>
+
+  <!-- Global parameters -->
+  <group scoped="false">
+    <include file="$(find-pkg-share global_parameter_loader)/launch/global_params.launch.py">
+      <arg name="use_sim_time" value="$(var use_sim_time)"/>
+      <arg name="vehicle_model" value="$(var vehicle_model)"/>
+    </include>
+  </group>
+
+  <!-- map_projection_loader -->
+  <group if="$(var map_projection_loader)">
+    <include file="$(find-pkg-share map_projection_loader)/launch/map_projection_loader.launch.xml">
+      <arg name="map_projector_info_path" value="$(var map_projector_info_path)"/>
+      <arg name="lanelet2_map_path" value="$(var lanelet2_map_path)"/>
+    </include>
+  </group>
+
+  <!-- Map -->
+  <group if="$(var Map)">
+    <include file="$(find-pkg-share autoware_launch)/launch/components/telop_map.launch.xml">
+      <arg name="map_path" value="$(var map_path)"/>
+    </include>
+  </group>
+
+  <!-- ground_segmentation -->
+  <group if="$(var ground_segmentation)">
+    <include file="$(find-pkg-share ground_segmentation)/launch/scan_ground_filter.launch.py">
+      <arg name="input/pointcloud" value="$(var input/pointcloud)"/>
+      <arg name="output/pointcloud" value="$(var output/pointcloud)"/>
+    </include>
+  </group>
+
+  <!-- euclidean_cluster -->
+  <group if="$(var euclidean_cluster)">
+    <include file="$(find-pkg-share euclidean_cluster)/launch/voxel_grid_based_euclidean_cluster.launch.xml">
+      <arg name="input_pointcloud" value="$(var input_pointcloud)"/>
+      <arg name="input_map" value="$(var input_map)"/>
+    </include>
+  </group>
+
+  <!-- detected_object_validation -->
+  <group if="$(var detected_object_validation)">
+    <include file="$(find-pkg-share detected_object_validation)/launch/cluster_lanelet_filter.launch.xml">
+      <arg name="input/cluster" value="$(var input/cluster)"/>
+    </include>
+  </group>
+
+</launch>
